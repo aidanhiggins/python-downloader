@@ -40,16 +40,16 @@ python testDownloader.py
   - level: INFO
   - includeDateInName: true
 
-- [EXTENSIONS] **File extensions listed here are attempted to be downloaded**
-  - type1: .png
-  - type2: .jpg
-  - type3: .jpeg
-  - type4: .gif
-  - type5: .bmp
-  - type6: .webm
-  - type7: .mp4
-
-- [EXCEPTIONS]
+[EXTENSIONS] **File extensions listed here are attempted to be downloaded**  
+  type1: .png  
+  type2: .jpg  
+  type3: .jpeg  
+  type4: .gif  
+  type5: .bmp  
+  type6: .webm  
+  type7: .mp4  
+  
+[EXCEPTIONS]  
   ; blacklisted urls  
   url01: myfreecams.com **URLs (or partial URLs) listed here are ignored for processing**  
 
