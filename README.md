@@ -50,6 +50,6 @@ python testDownloader.py
   - type7: .mp4
 
 - [EXCEPTIONS]
-  - ; blacklisted urls
-  - url01: myfreecams.com **URLs (or partial URLs) listed here are ignored for processing**
+  ; blacklisted urls  
+  url01: myfreecams.com **URLs (or partial URLs) listed here are ignored for processing**  
 
