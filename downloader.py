@@ -3,6 +3,8 @@ import shutil,os,configparser,logging,sys,requests
 import downloaderConfig
 from bs4 import BeautifulSoup
 from datetime import datetime
+from yattag import Doc, indent
+from PIL import Image
 
 urlsCache = set()
 logger = logging.getLogger('debug')
@@ -214,7 +216,7 @@ def get_videos(soup, baseUrl, outputConfig, exceptionsConfig):
         logger.info(str(copyCounter)+" videos saved.")
         
 
-def downloadDepth(soup, downloadUrl, urlConfig, outputConfig, extensionsConfig, exceptionsConfig, currentDepth):
+def downloadDepth(soup, downloadUrl, urlConfig, outputConfig, extensionsConfig, exceptionsConfig, currentDepth, imagesOnly):
     print("CurrentDepth: "+str(currentDepth))
     if not isURLBlacklisted(exceptionsConfig, downloadUrl): 
         imageResults = get_images(soup, downloadUrl, outputConfig, exceptionsConfig)
@@ -231,8 +233,8 @@ def downloadDepth(soup, downloadUrl, urlConfig, outputConfig, extensionsConfig, 
                 else: 
                     urlSoup = BeautifulSoup(urlResult, "html.parser")
                     urlImageResults = get_images(urlSoup, url, outputConfig, exceptionsConfig)
-                    if(currentDepth < int(urlConfig['maxDepth'])):
-                        downloadDepth(urlSoup, url, urlConfig, outputConfig, extensionsConfig, exceptionsConfig, currentDepth+1)
+                    if(imagesOnly in ['false', 'FALSE'] and currentDepth < int(urlConfig['maxDepth'])):
+                        downloadDepth(urlSoup, url, urlConfig, outputConfig, extensionsConfig, exceptionsConfig, currentDepth+1, 'false')
 
 def get_links(soup, baseUrl, outputConfig):
     urls = []
@@ -315,6 +317,84 @@ def isURLBlacklisted(exceptionsConfig, url):
             logger.info("Given URL ("+url+") contains "+exceptionsConfig[blacklistUrl])
             return True
     return False
+
+def outputHTML(downloadFolder):
+    #downloadFolder = getOutputFolder(outputConfig)
+    videos = ('.mp4','.webm')
+    #downloadFolder = './images_20160214_2129/'
+    doc, tag, text = Doc().tagtext()
+    with tag('html'):
+        with tag('head'):
+            with tag('title'):
+                text('Any old title')
+            with tag('style'):
+                text('body { background-color: black; }')
+                text('h1 { color: maroon; margin-left: 40px; } ')
+                text('img.displayed { display: block; margin-left: auto; margin-right: auto }')
+                text('video.displayed { display: block; margin-left: auto; margin-right: auto }')
+        with tag('body'):
+            for eachItem in os.listdir(downloadFolder):
+                if (eachItem.endswith(videos)):
+                    doc.asis('<video width="540" class="displayed" controls><source src="'+eachItem+'" ></video>')
+                    #with tag('video', width='540', klass='displayed', src=eachItem):
+                    #with tag('video', width='540', klass='displayed'):
+                    #    doc.stag('source', src=eachItem)
+                    doc.stag('br')
+                elif (not eachItem.startswith('.')):
+                    image = os.path.join(downloadFolder, eachItem)
+                    try:
+                        img = Image.open(image)
+                        width,height = img.size
+                        outputWidth, outputHeight = calculateImgOutputSizes(width,height)
+                        with tag('a', href=eachItem):
+                            doc.stag('img', style="width:"+str(outputWidth)+"px; height:"+str(outputHeight)+"px;)", klass='displayed', src=eachItem)
+                            doc.stag('br')
+                    except:
+                        logger.error("An error occurred while processing "+image+". Skipping.")
+    
+    with open(downloadFolder+'index.htm', 'a') as out: out.write(indent(doc.getvalue(), indent_text = True))
+    print('HTML saved to '+downloadFolder+'index.htm')
+    logger.info('HTML saved to '+downloadFolder+'index.htm')
+
+def regenerateAllHTML():
+    # Generate the correct download folder
+    downloadFolder = '.'
+    # list all folders that match the name format in downloader.ini
+    for eachItem in os.listdir(downloadFolder):
+        # print(os.path.join(downloadFolder, eachItem))
+        eachItem = os.path.join(downloadFolder, eachItem)
+        if (os.path.isdir(eachItem)):
+            # for each folder, check if it has an index.htm
+            fileToProcess = os.path.join(eachItem, "index.htm")
+            if (checkIfFolderMatchesOutputConfigPattern(eachItem) in ['true', 'TRUE']):
+                # print("index.htm exists in "+eachItem+", deleting")
+                #checkIfFolderMatchesOutputConfigPattern(eachItem)
+                if (os.path.isfile(fileToProcess)):
+                    os.remove(fileToProcess)
+                outputHTML(eachItem+"/")
+
+def checkIfFolderMatchesOutputConfigPattern(folder):
+    configOutFolderFormat = downloaderConfig.getOutputFolder()
+    # remove trailing slash
+    configOutFolderFormat = configOutFolderFormat[0:len(configOutFolderFormat)-1]
+    # check if the passed folder starts with this
+    if (folder.startswith(configOutFolderFormat)):
+        return 'true'
+    else:
+        return 'false'
+
+def calculateImgOutputSizes(width,height):
+    """ Calculates the image output width and height based on a configurage max width
+    """
+    maxOutputWidth = 540 # TODO: read from config
+    if (width > maxOutputWidth):
+        divider = width / maxOutputWidth
+        outputHeight = height / divider
+        return (maxOutputWidth, outputHeight)
+    else:
+        # If it's already smaller, we don't need to modify it
+        return (width,height)
+    
 
 def printAccessLog(statusCode, headers, url):
     contentLength = '-'

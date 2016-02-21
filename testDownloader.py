@@ -23,21 +23,41 @@ def generate_logger_name(loggingConfig):
     else:
         return loggingConfig['filename']
 
+def printHelpOptions():
+    print ("Usage:")
+    print ("  python3 testDownloader.py")
+    print ("  python3 testDownloader.py -h -c <configuration file location> -i -r")
+    print ("")
+    print ("Options:")
+    print ("  -h --help \t\t Show this screen.")
+    print ("  -c --config \t\t Set the location of the configuration file to use.")
+    print ("  -i --images \t\t Download images only (i.e. don't navigate to other pages.")
+    print ("  -r --regenerate \t (Re)Generate the index.htm file for all of the generated output locations.")
 
 def main(argv):
     configFile = "downloader.ini"
+    imagesOnly = 'false'
+    
     try:
-        opts,args = getopt.getopt(argv,"hc:",["help", "config"])
+        opts,args = getopt.getopt(argv,"hciro:",["help", "config", "images", "regenerate"])
     except getopt.GetoptError:
-        print ("Usage : python3 test_requests_download_logger.py -c <configuration file> or python3 test_requests_download_logger.py")
+        printHelpOptions()
         sys.exit(2)
     
     for opt in opts:
         if (opt[0] == '-h' or opt[0] == '--help'):
-            print ("Usage : python3 test_requests_download_logger.py -c <configuration file> or python3 test_requests_download_logger.py")
+            printHelpOptions()
+            sys.exit(0)
         if (opt[0] == '-c'):
             print("Configuration file defined, using: "+opt[1])
             configFile = opt[1]
+        if (opt[0] == '-i'):
+        	print("Downloading images only.")
+        	imagesOnly = 'true'
+        if (opt[0] == '-r'):
+        	print("Regenerating all HTML.")
+        	downloader.regenerateAllHTML()
+        	sys.exit(0)
     
     loggingConfig = downloader.readConfigSection(configFile, "LOGGER")
     accessloggingConfig = downloader.readConfigSection(configFile, "ACCESSLOGGER")
@@ -64,9 +84,11 @@ def main(argv):
     soup = BeautifulSoup(result, "html.parser")
 
     # Downloads the images:
-    downloader.downloadDepth(soup, downloadUrl, urlConfig, outputConfig, extensionsConfig, exceptionsConfig, 0)
+    downloader.downloadDepth(soup, downloadUrl, urlConfig, outputConfig, extensionsConfig, exceptionsConfig, 0, imagesOnly)
     if outputConfig['downloadVideos'] in ['true','TRUE']:
         downloader.get_videos(soup, downloadUrl, outputConfig, exceptionsConfig)
+    if outputConfig['outputHTML'] in ['true','TRUE']:
+        downloader.outputHTML(downloader.getOutputFolder(outputConfig))
 
     endTime = datetime.now()
     print("Complete at: "+str(endTime))

@@ -9,9 +9,19 @@ These scripts allow you to configure a website URL where it will download all im
 - urllib
 - BeautifulSoup4
 - logging
+- yattag
+- PIL
 
 ##Usage notes: 
-python testDownloader.py
+Usage:
+  python3 testDownloader.py
+  python3 testDownloader.py -h -c <configuration file location> -i -r
+
+Options:
+  -h --help 		 Show this screen.
+  -c --config 		 Set the location of the configuration file to use.
+  -i --images 		 Download images only (i.e. don't navigate to other pages.
+  -r --regenerate 	 (Re)Generate the index.htm file for all of the generated output locations.
 
 ##Configuration options explained:
 - [URL]
