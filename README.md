@@ -39,6 +39,7 @@ Options:
   minimumFileSize: 100 **The minimum file size to download, measured in Kb**  
   minimumContentLength: 10000 **The minimum content length for the file, as returned by the server**  
   downloadVideos: true **Whether or not to try to download videos**  
+  outputHTML: true **Whether to output a HTML representation of the downloaded files**  
   
 [LOGGER] **The error log configuration**  
   filename: downloader.log  
